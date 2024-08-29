@@ -116,18 +116,32 @@ def GetPoint(TOKEN):
     r = session.get(GetPointURL,headers=headers,verify=False).json()
     logger.success(f'[√] 成功获取Point {r}')
 
-def main(USERANEM,PASSWORD):
+
+def main(USERANEM, PASSWORD):
     TOKEN = ''
     if TOKEN == '':
         while True:
             TOKEN = login(USERANEM, PASSWORD)
             if TOKEN:
                 break
-
+    # 初始化计数器
+    count = 0
+    max_count = 5  # 每运行 200 次重新获取 TOKEN
     while True:
         try:
+            # 执行保持活动和获取点数的操作
             KeepAlive(USERANEM, TOKEN)
             GetPoint(TOKEN)
+            # 更新计数器
+            count += 1
+            # 每达到 max_count 次后重新获取 TOKEN
+            if count >= max_count:
+                logger.debug(f'[√] 重新登录获取Token...')
+                while True:
+                    TOKEN = login(USERANEM, PASSWORD)
+                    if TOKEN:
+                        break
+                count = 0  # 重置计数器
         except Exception as e:
             logger.error(e)
 
