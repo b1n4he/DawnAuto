@@ -126,7 +126,7 @@ def main(USERANEM, PASSWORD):
                 break
     # 初始化计数器
     count = 0
-    max_count = 5  # 每运行 200 次重新获取 TOKEN
+    max_count = 200  # 每运行 200 次重新获取 TOKEN
     while True:
         try:
             # 执行保持活动和获取点数的操作
