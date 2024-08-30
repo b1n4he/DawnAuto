@@ -48,7 +48,7 @@ function install_node() {
 
 
     # 获取用户名
-    read -r -p "请输入用户名: " DAWNUSERNAME
+    read -r -p "请输入邮箱: " DAWNUSERNAME
     export DAWNUSERNAME=$DAWNUSERNAME
 
     # 获取密码
