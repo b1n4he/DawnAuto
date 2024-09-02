@@ -43,20 +43,11 @@ def GetPuzzleID():
 
 # 检查验证码算式
 def IsValidExpression(expression):
-    # 检查表达式是否为空
-    if not expression.strip():
-        return False
-    # 使用正则表达式检查基本格式
-    # 至少包含一个数字和一个运算符
-    pattern = r'^(?=.*\d)(?=.*[\+\-\*/])[\d+\-*/().\s]+$'
-    if not re.match(pattern, expression):
-        return False
-    # 使用 ast 模块解析
-    try:
-        ast.parse(expression, mode='eval')
+    # 检查表达式是否为6位的字母和数字组合
+    pattern = r'^[A-Za-z0-9]{6}$'
+    if re.match(pattern, expression):
         return True
-    except (SyntaxError, ValueError):
-        return False
+    return False
 
 # 验证码识别
 def RemixCaptacha(base64_image):
@@ -64,14 +55,33 @@ def RemixCaptacha(base64_image):
     image_data = base64.b64decode(base64_image)
     # 使用BytesIO将二进制数据转换为一个可读的文件对象
     image = Image.open(BytesIO(image_data))
+    #####################################
+    # 将图像转换为 RGB 模式（如果不是的话）
+    image = image.convert('RGB')
+    # 创建一个新的图像（白色背景）
+    new_image = Image.new('RGB', image.size, 'white')
+    # 获取图像的宽度和高度
+    width, height = image.size
+    # 遍历所有像素
+    for x in range(width):
+        for y in range(height):
+            pixel = image.getpixel((x, y))
+            # 如果像素是黑色，则保留；否则设为白色
+            if pixel == (48, 48, 48):  # 黑色像素
+                new_image.putpixel((x, y), pixel)  # 保留原始黑色
+            else:
+                new_image.putpixel((x, y), (255, 255, 255))  # 替换为白色
+
+    ##################
+
     # 创建OCR对象
     ocr = ddddocr.DdddOcr(show_ad=False)
     ocr.set_ranges(0)
-    result = ocr.classification(image)
+    result = ocr.classification(new_image)
     logger.debug(f'[1] 验证码识别结果：{result}，是否为可计算验证码 {IsValidExpression(result)}',)
     if IsValidExpression(result) == True:
-        rc = eval(result)
-        return rc
+        #rc = eval(result)
+        return result
 
 
 def login(USERNAME,PASSWORD):
@@ -97,11 +107,12 @@ def login(USERNAME,PASSWORD):
         logger.info(f'[2] 登录数据： {login_data}')
         try:
             r = session.post(LoginURL,login_data,headers=headers,verify=False).json()
+            logger.debug(r)
             token = r['data']['token']
             logger.success(f'[√] 成功获取AuthToken {token}')
             return token
         except Exception as e:
-            logger.error(e)
+            logger.error(f'[x] 验证码错误，尝试重新获取...')
 
 def KeepAlive(USERNAME,TOKEN):
     data = {"username": USERNAME,"extensionid":"fpdkjdnhkakefebpekbdhillbhonfjjp","numberoftabs":0,"_v":"1.0.7"}
